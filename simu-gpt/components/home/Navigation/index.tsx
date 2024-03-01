@@ -2,6 +2,7 @@
 
 import { useAppContext } from "@/components/AppContext";
 import Menubar from "./Menubar";
+import Toolbar from "./Toolbar";
 
 export default function Navigation() {
   const {
@@ -11,9 +12,10 @@ export default function Navigation() {
     <nav
       className={` ${
         displayNavigation ? "" : "hidden"
-      } w-[260px] bg-gray-900 text-gray-300 h-full p-2`}
+      } dark w-[260px] bg-gray-900 text-gray-300 h-full p-2 relative`}
     >
       <Menubar></Menubar>
+      <Toolbar></Toolbar>
     </nav>
   );
 }

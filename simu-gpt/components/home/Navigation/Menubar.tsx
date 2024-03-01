@@ -1,11 +1,11 @@
-import AppContext, { useAppContext } from "@/components/AppContext";
+import { useAppContext } from "@/components/AppContext";
 import Button from "@/components/common/Button";
-import { useContext } from "react";
+import { ActionType } from "@/reducers/AppReducer";
 import { HiPlus } from "react-icons/hi";
 import { LuPanelLeft } from "react-icons/lu";
 
-export default function Navigation() {
-  const { setState } = useAppContext();
+export default function Menubar() {
+  const { dispatch } = useAppContext();
   return (
     <div className="flex space-x-3">
       <Button
@@ -19,12 +19,11 @@ export default function Navigation() {
         icon={LuPanelLeft}
         variant="outline"
         onClick={() => {
-          setState((v)=>{
-            return {
-              ...v,
-              displayNavigation:false,
-            }
-          })
+          dispatch({
+            type: ActionType.UPDATE,
+            field: "displayNavigation",
+            value: false,
+          });
         }}
       ></Button>
     </div>
