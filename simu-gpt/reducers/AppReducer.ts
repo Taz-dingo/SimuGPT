@@ -2,6 +2,7 @@
 export type State = {
     displayNavigation: boolean;
     themeMode: "dark" | "light";
+    currentModel: string;
 };
 // 根据type字段决定要进行甚麽操作
 export enum ActionType {
@@ -22,6 +23,7 @@ export type Action = UpdateAction;
 export const initState: State = {
     displayNavigation: true,
     themeMode: "light",
+    currentModel: "gpt-3.5-turbo",
 }
 // 1. 创建reducer函数。接收状态、操作，返回新的状态
 export function reducer(state: State, action: Action) {

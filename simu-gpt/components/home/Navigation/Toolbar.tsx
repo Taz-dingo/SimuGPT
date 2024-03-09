@@ -1,9 +1,6 @@
-import AppContext, { useAppContext } from "@/components/AppContext";
+import { useAppContext } from "@/components/AppContext";
 import Button from "@/components/common/Button";
 import { ActionType } from "@/reducers/AppReducer";
-import { useContext } from "react";
-import { HiPlus } from "react-icons/hi";
-import { LuPanelLeft } from "react-icons/lu";
 import { MdDarkMode, MdInfo, MdLightMode } from "react-icons/md";
 
 export default function Toolbar() {
