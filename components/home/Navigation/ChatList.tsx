@@ -1,100 +1,52 @@
 import { groupByDate } from "@/common/utils";
 import { Chat } from "@/types/chat";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AiOutlineEdit } from "react-icons/ai";
 import { MdCheck, MdClose, MdDeleteOutline } from "react-icons/md";
 import { PiChatBold, PiTrashBold } from "react-icons/pi";
 import ChatItem from "./ChatItem";
 import { useEventBusContext } from "@/components/EventBusContext";
+import { useAppContext } from "@/components/AppContext";
+import { ActionType } from "@/reducers/AppReducer";
 
 export default function ChatList() {
-  const [chatList, setChatList] = useState<Chat[]>([
-    {
-      id: "1",
-      title: "React入门实战教程",
-      updateTime: Date.now(),
-    },
-    {
-      id: "2",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "3",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "4",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "5",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "6",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "7",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "8",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "9",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "10",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "11",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "12",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "13",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "14",
-      title: "如何使用Next.js创建React项目",
-      updateTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
-    },
-    {
-      id: "15",
-      title: "知行小课",
-      updateTime: Date.now() + 2,
-    },
-  ]);
-  const [selectedChat, setSelectedChat] = useState<Chat>();
-  // 用useMemo缓存，只有列表变化时才重新计算分组
+  const [chatList, setChatList] = useState<Chat[]>([]);
+  const pageRef = useRef(1); // 用useMemo缓存，只有列表变化时才重新计算分组
   const groupList = useMemo(() => {
     return groupByDate(chatList); // 按时间分组
   }, [chatList]);
   const { subscribe, unsubscribe } = useEventBusContext();
+  const {
+    state: { selectedChat },
+    dispatch,
+  } = useAppContext();
+
+  async function getData() {
+    const response = await fetch(`/api/chat/list?page=${pageRef.current}`, {
+      method: "GET",
+    });
+    if (!response.ok) {
+      console.log(response.statusText);
+      return;
+    }
+    const { data } = await response.json();
+    if (pageRef.current === 1) {
+      setChatList(data.list); // 第一次请求，直接设置列表
+    } else {
+      setChatList((list) => list.concat(data.list)); // 非第一次请求，合并列表
+    }
+  }
+
+  useEffect(() => {
+    getData();
+  }, []);
 
   useEffect(() => {
     const callback: EventListener = () => {
-      console.log("fetchChatList");
+      // 刷新列表
+      // 且请求第一页数据（顶部）
+      pageRef.current = 1;
+      getData();
     };
     subscribe("fetchChatList", callback);
     return () => unsubscribe("fetchChatList", callback);
@@ -116,8 +68,13 @@ export default function ChatList() {
                     key={item.id}
                     item={item}
                     selected={selected}
-                    onSelected={(item) => {
-                      setSelectedChat(item); // 回调函数，点击之后把内部组件传递出来
+                    onSelected={(chat) => {
+                      // 更新选中的chat
+                      dispatch({
+                        type: ActionType.UPDATE,
+                        field: "selectedChat",
+                        value: chat,
+                      });
                     }}
                   ></ChatItem>
                 );
