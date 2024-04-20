@@ -1,10 +1,11 @@
 import { groupByDate } from "@/common/utils";
 import { Chat } from "@/types/chat";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AiOutlineEdit } from "react-icons/ai";
 import { MdCheck, MdClose, MdDeleteOutline } from "react-icons/md";
 import { PiChatBold, PiTrashBold } from "react-icons/pi";
 import ChatItem from "./ChatItem";
+import { useEventBusContext } from "@/components/EventBusContext";
 
 export default function ChatList() {
   const [chatList, setChatList] = useState<Chat[]>([
@@ -89,6 +90,15 @@ export default function ChatList() {
   const groupList = useMemo(() => {
     return groupByDate(chatList); // 按时间分组
   }, [chatList]);
+  const { subscribe, unsubscribe } = useEventBusContext();
+
+  useEffect(() => {
+    const callback: EventListener = () => {
+      console.log("fetchChatList");
+    };
+    subscribe("fetchChatList", callback);
+    return () => unsubscribe("fetchChatList", callback);
+  }, []);
 
   return (
     <div className="flex-1 mb-[48px] mt-2 flex flex-col overflow-y-auto">

@@ -8,14 +8,17 @@ import { v4 as uuidv4 } from "uuid";
 import { Message, MessageRequestBody } from "@/types/chat";
 import { useAppContext } from "@/components/AppContext";
 import { ActionType } from "@/reducers/AppReducer";
+import { useEventBusContext } from "@/components/EventBusContext";
 
 export default function ChatInput() {
   const [messageText, setMessageText] = useState("");
   const stopRef = useRef(false);
+  const chatIdRef = useRef("");
   const {
     state: { messageList, currentModel, streamingId },
     dispatch,
   } = useAppContext();
+  const { publish } = useEventBusContext();
 
   async function createOrUpdateMessage(message: Message) {
     const response = await fetch("/api/message/update", {
@@ -31,7 +34,27 @@ export default function ChatInput() {
       return;
     }
     const { data } = await response.json();
+    if (!chatIdRef.current) {
+      chatIdRef.current = data.message.chatId;
+      publish("fetchChatList");
+    }
     return data.message;
+  }
+
+  async function deleteMessage(id: string) {
+    const response = await fetch(`/api/message/delete?id=${id}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    // 检查响应状态
+    if (!response.ok) {
+      console.log(response.statusText);
+      return;
+    }
+    const { code } = await response.json();
+    return code === 0;
   }
 
   async function send() {
@@ -39,7 +62,7 @@ export default function ChatInput() {
       id: "",
       role: "user",
       content: messageText,
-      chatId: "",
+      chatId: chatIdRef.current,
     });
     dispatch({ type: ActionType.ADD_MESSAGE, message });
     // 当前消息和历史消息
@@ -53,6 +76,12 @@ export default function ChatInput() {
       messages.length !== 0 &&
       messages[messages.length - 1].role === "assistant"
     ) {
+      const result = await deleteMessage(messages[messages.length - 1].id);
+      // 删除失败
+      if (!result) {
+        console.log("delete message failed");
+        return;
+      }
       dispatch({
         type: ActionType.REMOVE_MESSAGE,
         message: messages[messages.length - 1],
@@ -89,12 +118,12 @@ export default function ChatInput() {
       return;
     }
     // 请求成功后添加assistant消息
-    const responseMessage: Message = {
-      id: uuidv4(),
+    const responseMessage: Message = await createOrUpdateMessage({
+      id: "",
       role: "assistant",
       content: "",
-      chatId: "",
-    };
+      chatId: chatIdRef.current,
+    });
     dispatch({ type: ActionType.ADD_MESSAGE, message: responseMessage });
     // 获取响应内容时候，添加steamingId
     dispatch({
@@ -124,6 +153,8 @@ export default function ChatInput() {
         message: { ...responseMessage, content },
       });
     }
+    createOrUpdateMessage({ ...responseMessage, content });
+
     // 获取结束后，清除steamingId
     dispatch({
       type: ActionType.UPDATE,
