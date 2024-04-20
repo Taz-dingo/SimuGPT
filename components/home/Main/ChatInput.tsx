@@ -17,12 +17,30 @@ export default function ChatInput() {
     dispatch,
   } = useAppContext();
 
+  async function createOrUpdateMessage(message: Message) {
+    const response = await fetch("/api/message/update", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(message),
+    });
+    // 检查响应状态
+    if (!response.ok) {
+      console.log(response.statusText);
+      return;
+    }
+    const { data } = await response.json();
+    return data.message;
+  }
+
   async function send() {
-    const message: Message = {
-      id: uuidv4(),
+    const message = await createOrUpdateMessage({
+      id: "",
       role: "user",
       content: messageText,
-    };
+      chatId: "",
+    });
     dispatch({ type: ActionType.ADD_MESSAGE, message });
     // 当前消息和历史消息
     const messages = messageList.concat([message]);
@@ -75,6 +93,7 @@ export default function ChatInput() {
       id: uuidv4(),
       role: "assistant",
       content: "",
+      chatId: "",
     };
     dispatch({ type: ActionType.ADD_MESSAGE, message: responseMessage });
     // 获取响应内容时候，添加steamingId
@@ -166,7 +185,7 @@ export default function ChatInput() {
             className="font-medium py-[1px] border-b border-dotted border-black/60 hover:border-black/0 drak:border-gray-200 dark:hover:border-gray-200/0 animated-underline"
             href="https://github.com/Taz-dingo"
             target="_blank"
-          > 
+          >
             Tazdingo
           </a>
         </footer>
