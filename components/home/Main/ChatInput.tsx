@@ -1,5 +1,5 @@
 import Button from "@/components/common/Button";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { MdRefresh } from "react-icons/md";
 import { PiLightningFill, PiStopBold } from "react-icons/pi";
 import { FiSend } from "react-icons/fi";
@@ -11,31 +11,52 @@ import { ActionType } from "@/reducers/AppReducer";
 
 export default function ChatInput() {
   const [messageText, setMessageText] = useState("");
+  const stopRef = useRef(false);
   const {
     state: { messageList, currentModel, streamingId },
     dispatch,
   } = useAppContext();
 
-  // 发送请求
-  const send = async () => {
-    // 当前消息
+  async function send() {
     const message: Message = {
       id: uuidv4(),
       role: "user",
       content: messageText,
     };
+    dispatch({ type: ActionType.ADD_MESSAGE, message });
     // 当前消息和历史消息
     const messages = messageList.concat([message]);
+    doSend(messages);
+  }
 
+  async function resend() {
+    const messages = [...messageList];
+    if (
+      messages.length !== 0 &&
+      messages[messages.length - 1].role === "assistant"
+    ) {
+      dispatch({
+        type: ActionType.REMOVE_MESSAGE,
+        message: messages[messages.length - 1],
+      });
+      // 临时的消息列表也需要去除最后一条消息
+      messages.splice(messages.length - 1, 1);
+    }
+    doSend(messages);
+  }
+
+  // 发送请求
+  async function doSend(messages: Message[]) {
     // 请求体，把 text JSON序列化
     const body: MessageRequestBody = { messages, model: currentModel };
-    // 添加user消息
-    dispatch({ type: ActionType.ADD_MESSAGE, message });
+    setMessageText("");
+    const controller = new AbortController();
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      signal: controller.signal,
       body: JSON.stringify(body),
     });
 
@@ -68,6 +89,11 @@ export default function ChatInput() {
     let done = false;
     let content = "";
     while (!done) {
+      if (stopRef.current) {
+        stopRef.current = false;
+        controller.abort();
+        break;
+      }
       const result = await reader.read();
       done = result.done;
       // 追加内容
@@ -87,7 +113,7 @@ export default function ChatInput() {
     });
 
     setMessageText("");
-  };
+  }
 
   return (
     <div className="absolute bottom-0 inset-x-0  bg-gradient-to-b from-[rgba(255,255,255,0)] from-[13.94%] to-[#fff] to-[54.73%] pt-10 dark:from-[rgba(53,55,64,0)] dark:to-[#353740] dark:to-[58.85%]">
@@ -100,6 +126,7 @@ export default function ChatInput() {
               icon={PiStopBold}
               variant="primary"
               className="font-medium"
+              onClick={() => (stopRef.current = true)}
             >
               停止生成
             </Button>
@@ -108,6 +135,7 @@ export default function ChatInput() {
               icon={MdRefresh}
               variant="primary"
               className="font-medium"
+              onClick={() => resend()}
             >
               重新生成
             </Button>
@@ -138,7 +166,7 @@ export default function ChatInput() {
             className="font-medium py-[1px] border-b border-dotted border-black/60 hover:border-black/0 drak:border-gray-200 dark:hover:border-gray-200/0 animated-underline"
             href="https://github.com/Taz-dingo"
             target="_blank"
-          >
+          > 
             Tazdingo
           </a>
         </footer>
