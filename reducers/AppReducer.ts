@@ -1,4 +1,4 @@
-import { Message } from "@/types/chat";
+import { Chat, Message } from "@/types/chat";
 
 // 状态类型
 export type State = {
@@ -7,6 +7,7 @@ export type State = {
     currentModel: string;
     messageList: Message[];
     streamingId: string;
+    selectedChat?: Chat
 };
 // 根据type字段决定要进行甚麽操作
 export enum ActionType {

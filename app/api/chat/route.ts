@@ -1,3 +1,4 @@
+import { sleep } from "@/common/utils";
 import { MessageRequestBody } from "@/types/chat";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,8 +9,10 @@ export async function POST(request: NextRequest) {
         async start(controller) {
             const messageText = messages[messages.length - 1].content;
             for (let i = 0; i < messageText.length; i++) {
+                await sleep(100)
                 controller.enqueue(encoder.encode(messageText[i]));
             }
+            controller.close();
         }
     });
 
