@@ -37,7 +37,6 @@ export default function ChatList() {
       loadingRef.current = false; // 请求完成后重置状态
       return;
     }
-    pageRef.current++; // 发起请求后，页码+1
     const { data } = await response.json();
     hasMoreRef.current = data.hasMore;
     if (pageRef.current === 1) {
@@ -45,6 +44,7 @@ export default function ChatList() {
     } else {
       setChatList((list) => list.concat(data.list)); // 非第一次请求，合并列表
     }
+    pageRef.current++; // 发起请求后，页码+1
     loadingRef.current = false; // 请求完成后重置状态
   }
 
