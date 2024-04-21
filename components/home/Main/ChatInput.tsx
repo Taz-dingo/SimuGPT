@@ -37,6 +37,11 @@ export default function ChatInput() {
     if (!chatIdRef.current) {
       chatIdRef.current = data.message.chatId;
       publish("fetchChatList");
+      dispatch({
+        type: ActionType.UPDATE,
+        field: "selectedChat",
+        value: { id: chatIdRef.current },
+      });
     }
     return data.message;
   }
@@ -94,6 +99,7 @@ export default function ChatInput() {
 
   // 发送请求
   async function doSend(messages: Message[]) {
+    stopRef.current = false;
     // 请求体，把 text JSON序列化
     const body: MessageRequestBody = { messages, model: currentModel };
     setMessageText("");
@@ -138,7 +144,6 @@ export default function ChatInput() {
     let content = "";
     while (!done) {
       if (stopRef.current) {
-        stopRef.current = false;
         controller.abort();
         break;
       }
@@ -165,9 +170,13 @@ export default function ChatInput() {
   }
 
   useEffect(() => {
-    if (selectedChat) {
-      chatIdRef.current = selectedChat.id;
+    if (chatIdRef.current === selectedChat?.id) {
+      return;
     }
+    // 更新id（为空是新建对话的情况）
+    chatIdRef.current = selectedChat?.id ?? "";
+    // 切换聊天时，停止
+    stopRef.current = true;
   }, [selectedChat]);
 
   return (
