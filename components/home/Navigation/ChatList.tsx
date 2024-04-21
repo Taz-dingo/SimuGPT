@@ -20,22 +20,54 @@ export default function ChatList() {
     state: { selectedChat },
     dispatch,
   } = useAppContext();
+  const loadMoreRef = useRef(null); // 加载ref
+  const hasMoreRef = useRef(false); // 是否有更多数据
+  const loadingRef = useRef(false); // 是否正在加载
 
   async function getData() {
+    if (loadingRef.current) {
+      return;
+    }
+    loadingRef.current = true;  // 开始请求
     const response = await fetch(`/api/chat/list?page=${pageRef.current}`, {
       method: "GET",
     });
     if (!response.ok) {
       console.log(response.statusText);
+      loadingRef.current = false; // 请求完成后重置状态
       return;
     }
+    pageRef.current++; // 发起请求后，页码+1
     const { data } = await response.json();
+    hasMoreRef.current = data.hasMore;
     if (pageRef.current === 1) {
       setChatList(data.list); // 第一次请求，直接设置列表
     } else {
       setChatList((list) => list.concat(data.list)); // 非第一次请求，合并列表
     }
+    loadingRef.current = false; // 请求完成后重置状态
   }
+
+  useEffect(() => {
+    let observer: IntersectionObserver;
+    let div = loadMoreRef.current;
+    if (div) {
+      // 检测元素与视窗相交情况
+      observer = new IntersectionObserver((entries) => {
+        // 相交且有更多数据
+        if (entries[0].isIntersecting && hasMoreRef.current) {
+          getData();
+        }
+      });
+      observer.observe(div);
+    }
+
+    return () => {
+      if (observer && div) {
+        observer.unobserve(div);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     getData();
@@ -83,6 +115,7 @@ export default function ChatList() {
           </div>
         );
       })}
+      <div ref={loadMoreRef}>&nbsp;</div>
     </div>
   );
 }
