@@ -34,7 +34,7 @@ export default function ChatItem({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-      },
+      }, 
       body: JSON.stringify({ id: item.id, title }),
     });
     // 检查响应状态
