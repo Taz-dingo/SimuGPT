@@ -11,6 +11,8 @@ import {
   useState,
 } from "react";
 
+export type EventListener = (data?: any) => void;
+
 // app上下文参数类型
 type EventBusContextProps = {
   subscribe: (event: string, callback: EventListener) => void;

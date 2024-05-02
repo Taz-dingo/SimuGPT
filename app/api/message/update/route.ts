@@ -22,7 +22,6 @@ export async function POST(request: NextRequest) {
         })
     }
 
-
     // 创建或更新消息
     let message = await prisma.message.upsert({
         create: data,
