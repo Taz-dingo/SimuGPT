@@ -84,6 +84,75 @@ export default function ChatInput() {
     // 当前消息和历史消息
     const messages = messageList.concat([message]);
     doSend(messages);
+
+    if (!selectedChat?.title || selectedChat.title === "新对话") {
+      updateChatTitle(messages);
+    }
+  }
+
+  async function updateChatTitle(messages: Message[]) {
+    const message: Message = {
+      id: "",
+      role: "user",
+      content:
+        "使用 5 到 10 个字直接返回这句话的简要主题，不要解释、不要标点、不要语气词、不要多余文本，如果没有主题，请直接返回'新对话'",
+      chatId: chatIdRef.current,
+    };
+    const chatId = chatIdRef.current; // 保存chatId，防止在更新时切换对话导致标题不对
+    const body: MessageRequestBody = {
+      messages: [...messages, message],
+      model: currentModel,
+    };
+
+    let response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    // 检查响应状态
+    if (!response.ok) {
+      console.log(response.statusText);
+      return;
+    }
+    // 检查响应内容
+    if (!response.body) {
+      console.log("No response body");
+      return;
+    }
+
+    // 读取响应内容
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let done = false;
+    let title = "";
+    while (!done) {
+      const result = await reader.read();
+      done = result.done;
+      // 追加内容
+      const chunk = decoder.decode(result.value);
+      title += chunk;
+     
+    }
+    // 手动更新title
+    response = await fetch("/api/chat/update", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      }, 
+      body: JSON.stringify({ id: chatId, title }),
+    });
+    // 检查响应状态
+    if (!response.ok) {
+      console.log(response.statusText);
+      return;
+    }
+    const { code } = await response.json();
+    if (code === 0) {
+      publish("fetchChatList");
+    }
   }
 
   async function resend() {
