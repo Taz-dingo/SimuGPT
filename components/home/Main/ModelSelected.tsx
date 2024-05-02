@@ -6,7 +6,7 @@ import { PiLightningFill, PiShootingStar } from "react-icons/pi";
 export default function ModelSelected() {
   const Models = [
     {
-      id: "gpt-3.5-turbo",
+      id: "gpt-35-turbo",
       name: "GPT-3.5",
       icon: PiLightningFill,
     },
